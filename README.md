@@ -76,28 +76,20 @@ class Car(private val engine: Engine) {
 package com.alaaeddinalbarghoth.manualdiinandroid.di.composition
 
 import android.app.Application
-import com.alaaeddinalbarghoth.manualdiinandroid.di.abstractions.*
+import com.alaaeddinalbarghoth.manualdiinandroid.di.abstractions.Car
+import com.alaaeddinalbarghoth.manualdiinandroid.di.abstractions.ElectricEngine
+import com.alaaeddinalbarghoth.manualdiinandroid.di.abstractions.GasEngine
 
-enum class EngineKind { GAS, ELECTRIC }
-
+// Composition Root
 class AppContainer(app: Application) {
 
-    // App-wide singletons (one instance for the entire app process)
-    val gasEngine: Engine by lazy { GasEngine() }
-    val electricEngine: Engine by lazy { ElectricEngine() }
+    // Singleton: Example of a singleton dependency
+    val gasEngine = GasEngine()
+    val electricEngine = ElectricEngine()
 
-    // Default binding (you can switch via flavor/flag)
-    val defaultEngine: Engine by lazy { gasEngine }
-
-    // Factories: create a new Car per call (unscoped)
-    fun car(): Car = Car(defaultEngine)
-
-    fun car(kind: EngineKind): Car = Car(
-        when (kind) {
-            EngineKind.GAS -> gasEngine
-            EngineKind.ELECTRIC -> electricEngine
-        }
-    )
+    // Factory: New car each time, reusing the singleton Engine
+    fun gasCar() = Car(gasEngine)
+    fun electricCar() = Car(electricEngine)
 }
 ```
 
@@ -178,22 +170,7 @@ dependencies {
 }
 ```
 
-**Groovy** (`app/build.gradle`):
-```groovy
-dependencies {
-    testImplementation 'junit:junit:4.13.2'
-    // Or:
-    // testImplementation kotlin("test")
-    // testImplementation kotlin("test-junit")
-}
-```
-
 ### 2) Create folders and file
-
-Create:
-```
-app/src/test/java/com/alaaeddinalbarghoth/manualdiinandroid/di/abstractions/CarTest.kt
-```
 
 ### 3) Sample test
 ```kotlin
@@ -215,31 +192,6 @@ class CarTest {
 }
 ```
 
-Run via Android Studio (**Run 'CarTest'**) or CLI:
-```
-./gradlew :app:testDebugUnitTest
-```
-
-> UI/Android-dependent tests go under `app/src/androidTest/...` with Espresso/ActivityScenario.
-
----
-
-## `lateinit` vs `by lazy`
-
-- **`by lazy` (recommended here)**: best for **read-only, one-time** singletons (`val container by lazy { ... }`). No risk of uninitialized access.
-- **`lateinit var`**: use only if you **must reassign** in tests or need two-phase init. Access before init throws `UninitializedPropertyAccessException`.
-
-Example with `lateinit`:
-```kotlin
-class App : Application() {
-    lateinit var container: AppContainer
-        private set
-    override fun onCreate() {
-        super.onCreate()
-        container = AppContainer(this)
-    }
-}
-```
 
 ---
 
